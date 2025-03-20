@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <script>
+        async function fetchWeather() {
+            const city = document.getElementById('city').value;
+            if (!city) return alert('Please enter a city name.');
+
+            const response = await fetch(`/api/weather.php?city=${city}`);
+            const data = await response.json();
+
+            if (data.cod !== 200) {
+                document.getElementById('weather').innerHTML = 'City not found';
+                return;
+            }
+
+            document.getElementById('weather').innerHTML = `
+                <h2>${data.name}, ${data.sys.country}</h2>
+                <p>Temperature: ${data.main.temp}°C</p>
+                <p>Weather: ${data.weather[0].description}</p>
+                <p>Humidity: ${data.main.humidity}%</p>
+            `;
+            fetchForecast(city);
+        }
+
+        async function fetchForecast(city) {
+            const response = await fetch(`/api/weather.php?city=${city}&forecast=true`);
+            const data = await response.json();
+
+            if (data.cod !== "200") {
+                document.getElementById('forecast').innerHTML = 'Forecast not available';
+                return;
+            }
+
+            let forecastHtml = '<h3>5-Day Forecast</h3>';
+            const forecastMap = {};
+
+            data.list.forEach(item => {
+                const date = item.dt_txt.split(' ')[0];
+                if (!forecastMap[date]) {
+                    forecastMap[date] = item;
+                }
+            });
+
+            Object.values(forecastMap).forEach(item => {
+                forecastHtml += `
+                    <p><strong>${item.dt_txt.split(' ')[0]}</strong>: 
+                    ${item.main.temp}°C, ${item.weather[0].description}</p>
+                `;
+            });
+
+            document.getElementById('forecast').innerHTML = forecastHtml;
+        }
+    </script>
+</head>
+<body>
+    <h1>Weather Dashboard</h1>
+    <input type="text" id="city" placeholder="Enter city name">
+    <button onclick="fetchWeather()">Get Weather</button>
+    <div id="weather"></div>
+    <div id="forecast"></div>
+</body>
+</html>
